@@ -1,0 +1,7 @@
+{
+  "cluster_name": "wonderful-jazz-ant",
+  "region": "ap-south-1",
+  "node_group_name": "wonderful-jazz-ant-managed-ng",
+  "cluster_type": "eks",
+  "assume_role_arn": ""
+}
