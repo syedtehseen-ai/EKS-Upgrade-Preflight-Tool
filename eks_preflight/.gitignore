@@ -1,0 +1,113 @@
+# ================================
+# Python
+# ================================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+pip-wheel-metadata/
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.venv/
+venv/
+env/
+ENV/
+
+# ================================
+# IDE / Editor
+# ================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*.bak
+*.tmp
+.DS_Store
+Thumbs.db
+
+# ================================
+# Logs
+# ================================
+*.log
+logs/
+*.out
+
+# ================================
+# AWS Credentials
+# ================================
+.aws/
+aws_credentials
+credentials
+config
+*.pem
+*.key
+
+# ================================
+# Terraform
+# ================================
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+terraform.tfvars
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# ================================
+# Kubernetes
+# ================================
+kubeconfig
+.kube/
+kube-config
+*.kubeconfig
+
+# ================================
+# Jenkins
+# ================================
+jenkins_home/
+workspace/
+jobs/
+secrets/
+credentials.xml
+
+# ================================
+# Environment Variables
+# ================================
+.env
+.env.*
+*.env
+
+# ================================
+# Reports / Output
+# ================================
+reports/
+output/
+results/
+*.json
+*.xml
+*.csv
+
+# ================================
+# OS Files
+# ================================
+*.DS_Store
+ehthumbs.db
+Desktop.ini
+
+# ================================
+# Backup Files
+# ================================
+*~
+*.orig
+*.old
