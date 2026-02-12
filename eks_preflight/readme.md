@@ -183,4 +183,4 @@ This converts operational pain into repeatable engineering logic.
 ##  Author
 
 
-Built by a DevOps Engineer transitioning toward platform architecture by turning real production incidents into engineering guardrails.
+Built by a DevOps Engineer transitioning toward platform architecture by turning real production incidents into engineering guardrails..
