@@ -77,7 +77,7 @@ Perfect for pipeline integration (Jenkins / GitHub Actions).
 
 ---
 
-## 🛠 Architecture Flow
+##  Architecture Flow
 
 High-level execution flow:
 
@@ -93,7 +93,7 @@ High-level execution flow:
 
 ---
 
-## 🖥 Example Usage
+##  Example Usage
 
 ```bash
 python main.py \
@@ -104,7 +104,7 @@ python main.py \
 
 ---
 
-## 📄 Example Output
+##  Example Output
 
 ```
 Cluster Name : wonderful-jazz-ant
@@ -145,7 +145,7 @@ NOT SAFE TO UPGRADE
 
 ---
 
-## 🎯 Why This Matters
+##  Why This Matters
 
 Instead of discovering failures during a live upgrade:
 
@@ -160,7 +160,7 @@ This converts operational pain into repeatable engineering logic.
 
 ---
 
-## 📦 Tech Stack
+##  Tech Stack
 
 * Python
 * boto3 (AWS SDK)
@@ -170,7 +170,7 @@ This converts operational pain into repeatable engineering logic.
 
 ---
 
-## 🧭 Roadmap (Future Enhancements)
+##  Roadmap (Future Enhancements)
 
 * Strict add-on version compatibility validation
 * Multi-nodegroup scanning
@@ -180,6 +180,7 @@ This converts operational pain into repeatable engineering logic.
 
 ---
 
-## 👤 Author
+##  Author
+
 
 Built by a DevOps Engineer transitioning toward platform architecture by turning real production incidents into engineering guardrails.
