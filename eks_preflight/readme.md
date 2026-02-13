@@ -96,7 +96,7 @@ High-level execution flow:
 ##  Example Usage
 
 ```bash
-python main.py \
+eks-preflight \
   --cluster wonderful-jazz-ant \
   --region ap-south-1 \
   --nodegroup wonderful-jazz-ant-managed-ng
