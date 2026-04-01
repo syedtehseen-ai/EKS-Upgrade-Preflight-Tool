@@ -1,10 +1,14 @@
 import argparse
 import sys
 
-from aws_utils import create_aws_session
-from k8s_utils import init_k8s_client, get_live_max_pods
-from checks.cni import check_cni_conflict
-from checks.addons import check_addon_compatibility
+from eks_preflight.aws_utils import create_aws_session
+from eks_preflight.k8s_utils import (
+    init_k8s_client,
+    get_live_max_pods,
+    get_instance_network_limits
+)
+from eks_preflight.checks.cni import check_cni_conflict
+from eks_preflight.checks.addons import check_addon_compatibility
 
 
 def main():
@@ -23,16 +27,13 @@ def main():
     ec2 = session.client("ec2")
 
     # ---- Kubernetes Clients ----
-    core_v1, apps_v1 = init_k8s_client()
+    core_v1, apps_v1 = init_k8s_client(args.cluster, args.region)
 
-    # ---- Basic Info ----
-    print("\nCluster Name :", args.cluster)
-    print("Region       :", args.region)
-    print("Cluster Type : eks\n")
+    # ---- Header ----
+    print("\n=== EKS Preflight Check ===\n")
+    print(f"Cluster: {args.cluster} ({args.region})\n")
 
     # ---- Fetch Nodegroup ----
-    print("Fetching node group details...\n")
-
     response = eks.describe_nodegroup(
         clusterName=args.cluster,
         nodegroupName=args.nodegroup
@@ -44,36 +45,48 @@ def main():
     instance_types = nodegroup.get("instanceTypes", [])
     desired_size = nodegroup.get("scalingConfig", {}).get("desiredSize")
 
-    print("Node Group Info:")
-    print("  Subnets       :", subnets)
-    print("  InstanceTypes :", instance_types)
-    print("  Desired Size  :", desired_size)
-
-    # ---- Max Pods ----
-    live_max = get_live_max_pods(args.nodegroup, core_v1)
-
-    if live_max:
-        print(f"\nLive maxPods detected from node: {live_max}")
-        max_pods = live_max
-    else:
-        print("\nLive maxPods could not be detected, using ENI fallback")
-        max_pods = 20
-
-    # ---- Subnet Capacity ----
-    print("\nChecking subnet IP availability...\n")
-
     if not instance_types:
         print("ERROR: No instance type found")
         sys.exit(1)
 
     instance_type = instance_types[0]
+
+    # ---- Max Pods ----
+    live_max = get_live_max_pods(args.nodegroup, core_v1)
+
+    if live_max:
+        max_pods = live_max
+    else:
+        max_pods = 20  # fallback
+
+    # ---- Node Group Info ----
+    print("[Node Group]")
+    print(f"  Instance Type : {instance_type}")
+    print(f"  Desired Size  : {desired_size}")
+    print(f"  Max Pods/Node : {max_pods}")
+
+    # ---- Instance Capacity ----
+    max_enis, ips_per_eni = get_instance_network_limits(instance_type, args.region)
+
+    max_possible_ips = max_enis * ips_per_eni
+    max_possible_pods = max_possible_ips - 1  # AWS reserves 1
+
+    print("\n[Instance Capacity]")
+    print(f"  Supported Pods : {max_possible_pods}")
+
+    instance_safe = True
+    if max_pods > max_possible_pods:
+        print("  Status         : ❌ FAIL (Insufficient capacity)")
+        print("💡 Recommendation: Upgrade instance type Or reduce pod density per node\n")
+        instance_safe = False
+    else:
+        print("  Status         : ✅ PASS")
+
+    # ---- Subnet Capacity ----
     required_ips = max_pods * desired_size
 
-    print("Instance Type          :", instance_type)
-    print("Max Pods per Node      :", max_pods)
-    print("Nodes Being Replaced   :", desired_size)
-    print("Required IPs per Subnet:", required_ips)
-    print()
+    print("\n[Subnet Capacity]")
+    print(f"  Required IPs per subnet : {required_ips}")
 
     subnet_safe = True
 
@@ -82,42 +95,31 @@ def main():
         available_ips = subnet_response["Subnets"][0]["AvailableIpAddressCount"]
 
         if available_ips < required_ips:
-            print(f"  Subnet {subnet_id} has only {available_ips} IPs (required {required_ips})")
+            print(f"  {subnet_id} : ❌ FAIL ({available_ips} available)")
+            print("💡 Recommendation: Add more nodes/subnets OR Expand CIDR")
             subnet_safe = False
         else:
-            print(f"  Subnet {subnet_id} OK ({available_ips} IPs available)")
+            print(f"  {subnet_id} : ✅ OK ({available_ips} available)")
 
-    # ---- CNI Check ----
-    print("\nRunning CNI conflict check...\n")
+    # ---- Checks ----
+    print("\n[Checks]")
 
     cni_safe = check_cni_conflict(apps_v1)
-
-    if cni_safe:
-        print("CNI check: PASSED")
-    else:
-        print("CNI check: FAILED (Conflict detected)")
-
-    # ---- Add-on Check ----
-    print("\nRunning Add-on compatibility check...\n")
+    print(f"  CNI Check        : {'✅ PASS' if cni_safe else '❌ FAIL'}")
 
     addon_safe = check_addon_compatibility(session, args.cluster)
-
-    if addon_safe:
-        print("Add-on check: REVIEW (Version compatibility not strictly validated in v1)")
-    else:
-        print("Add-on check: FAILED")
-
+    print(f"  Add-on Check     : {'⚠️ REVIEW' if addon_safe else '❌ FAIL'}")
 
     # ---- Final Result ----
-    print("\n================ FINAL RESULT ================\n")
+    print("\n=== FINAL RESULT ===")
 
-    overall_safe = subnet_safe and cni_safe and addon_safe
+    overall_safe = subnet_safe and cni_safe and addon_safe and instance_safe
 
     if overall_safe:
-        print("SAFE TO UPGRADE\n")
+        print("✅ SAFE TO UPGRADE\n")
         sys.exit(0)
     else:
-        print("NOT SAFE TO UPGRADE\n")
+        print("❌ NOT SAFE TO UPGRADE\n")
         sys.exit(2)
 
 
